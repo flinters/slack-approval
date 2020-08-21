@@ -1,84 +1,15 @@
 package cmd
 
 
-// import (
-// 	"fmt"
-// 	"os"
-
-// 	homedir "github.com/mitchellh/go-homedir"
-// 	"github.com/spf13/cobra"
-// 	"github.com/spf13/viper"
-// )
-
-// var (
-// 	// Used for flags.
-// 	cfgFile     string
-// 	userLicense string
-
-// 	rootCmd = &cobra.Command{
-// 		Use:   "slack-approval",
-// 		Short: "Enables group approval on Slack",
-// // 		Long: `Cobra is a CLI library for Go that empowers applications.
-// // This application is a tool to generate the needed files
-// // to quickly create a Cobra application.`,
-// 		Run: func(cmd *cobra.Command, args []string) {
-// 			fmt.Println("hogeeeeeeee")
-// 		},
-// 	}
-// )
-
-// // Execute executes the root command.
-// func Execute() error {
-// 	return rootCmd.Execute()
-// }
-
-// func init() {
-// 	cobra.OnInitialize(initConfig)
-
-// 	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.cobra.yaml)")
-// 	rootCmd.PersistentFlags().StringP("author", "a", "YOUR NAME", "author name for copyright attribution")
-// 	rootCmd.PersistentFlags().StringVarP(&userLicense, "license", "l", "", "name of license for the project")
-// 	rootCmd.PersistentFlags().Bool("viper", true, "use Viper for configuration")
-// 	viper.BindPFlag("author", rootCmd.PersistentFlags().Lookup("author"))
-// 	viper.BindPFlag("useViper", rootCmd.PersistentFlags().Lookup("viper"))
-// 	viper.SetDefault("author", "NAME HERE <EMAIL ADDRESS>")
-// 	viper.SetDefault("license", "apache")
-// }
-
-// func er(msg interface{}) {
-// 	fmt.Println("Error:", msg)
-// 	os.Exit(1)
-// }
-
-// func initConfig() {
-// 	if cfgFile != "" {
-// 		// Use config file from the flag.
-// 		viper.SetConfigFile(cfgFile)
-// 	} else {
-// 		// Find home directory.
-// 		home, err := homedir.Dir()
-// 		if err != nil {
-// 			er(err)
-// 		}
-
-// 		// Search config in home directory with name ".cobra" (without extension).
-// 		viper.AddConfigPath(home)
-// 		viper.SetConfigName(".cobra")
-// 	}
-
-// 	viper.AutomaticEnv()
-
-// 	if err := viper.ReadInConfig(); err == nil {
-// 		fmt.Println("Using config file:", viper.ConfigFileUsed())
-// 	}
-// }
-
 import (
-	// "fmt"
+	"fmt"
 	// "strings"
+	"encoding/json"
+
 	"net/http"
 	"bytes"
 	"time"
+	"strconv"
 
 
 
@@ -128,8 +59,10 @@ func Execute() {
 	var rootCmd = &cobra.Command{
 		Use: "slack-approval",
 		Run: func(cmd *cobra.Command, args []string) {
-			requestToSlack("ididid", "どうよ")
-			// createEvent()
+			confirmMessage := args[0]
+			fmt.Println(confirmMessage)
+			id := createEvent()
+			requestToSlack(id, confirmMessage)
 		},
 	}
 	// rootCmd.AddCommand(cmdPrint, cmdEcho)
@@ -137,16 +70,40 @@ func Execute() {
 	rootCmd.Execute()
 }
 
-func createEvent()  {
-    now := time.Now()
-    secs := now.Unix()
+var debugUrl = "https://412c6cfaf8b6.ngrok.io"
+var serverUrl = "https://8eiq8vncn4.execute-api.ap-northeast-1.amazonaws.com/dev/events"
 
-	fmt.Println(secs)
-	fmt.Println(secs + 1)
+type createEventRespBody struct {
+    Id string
 }
+
+func createEvent() string {
+	fiveMinutesLater := (time.Now().Unix()) + 60 * 5
+
+	body := `
+	{
+		"timeout_epoch": `+ strconv.FormatInt(fiveMinutesLater, 10) +`
+	}`
+
+	res, err := http.Post(serverUrl, "application/json", bytes.NewBuffer([]byte(body)))
+    if err != nil {
+        panic(err)
+	}
+	var data createEventRespBody
+    err = json.NewDecoder(res.Body).Decode(&data)
+
+	defer res.Body.Close()
+
+    if err != nil {
+        panic(err)
+	}
+
+	fmt.Println("id: " + data.Id)
+	return data.Id
+}
+
 func requestToSlack(id string, message string) {
-	// url := "https://412c6cfaf8b6.ngrok.io"
-	url := "https://hooks.slack.com/services/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"
+	url := "https://hooks.slack.com/services/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"
 
 	// jsonStr := []byte(`{"token":"aaaa"}`)
 	// req, err := http.Post(url, bytes.NewBuffer(jsonStr))
