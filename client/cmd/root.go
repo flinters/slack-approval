@@ -2,6 +2,7 @@ package cmd
 
 
 import (
+	"os"
 	"fmt"
 	// "strings"
 	"encoding/json"
@@ -63,6 +64,7 @@ func Execute() {
 			fmt.Println(confirmMessage)
 			id := createEvent()
 			requestToSlack(id, confirmMessage)
+			waitEventAndFinish(id)
 		},
 	}
 	// rootCmd.AddCommand(cmdPrint, cmdEcho)
@@ -70,8 +72,46 @@ func Execute() {
 	rootCmd.Execute()
 }
 
-var debugUrl = "https://412c6cfaf8b6.ngrok.io"
+// var debugUrl = "https://412c6cfaf8b6.ngrok.io"
 var serverUrl = "https://8eiq8vncn4.execute-api.ap-northeast-1.amazonaws.com/dev/events"
+
+type checkEventRespBody struct {
+	Status string
+}
+
+func waitEventAndFinish(id string) string {
+
+	for {
+		status := checkEventStatus(id)
+		fmt.Println(status)
+
+		if status == "timeout" || status == "rejected" {
+			os.Exit(1)
+		} else if status == "approved" {
+			os.Exit(0)
+		}
+		time.Sleep(time.Second * 10)
+	}
+}
+
+func checkEventStatus(id string) string {
+
+	res, err := http.Get(serverUrl + "/" + id)
+	// res, err := http.Get(debugUrl + "/" + id)
+	if err != nil {
+		panic(err)
+	}
+	var data checkEventRespBody
+	err = json.NewDecoder(res.Body).Decode(&data)
+
+	defer res.Body.Close()
+
+	if err != nil {
+		panic(err)
+	}
+
+	return data.Status
+}
 
 type createEventRespBody struct {
     Id string
