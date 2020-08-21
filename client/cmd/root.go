@@ -60,11 +60,13 @@ func Execute() {
 	var rootCmd = &cobra.Command{
 		Use: "slack-approval",
 		Run: func(cmd *cobra.Command, args []string) {
-			confirmMessage := args[0]
-			fmt.Println(confirmMessage)
-			id := createEvent()
-			requestToSlack(id, confirmMessage)
-			waitEventAndFinish(id)
+			confirmMessage, serverUrl, slackUrl := args[0], args[1], args[2]
+			fmt.Println("confirmMessage: " + confirmMessage)
+			fmt.Println("serverUrl: " + serverUrl)
+			fmt.Println("slackUrl: " + slackUrl)
+			id := createEvent(serverUrl)
+			requestToSlack(slackUrl, id, confirmMessage)
+			waitEventAndFinish(serverUrl, id)
 		},
 	}
 	// rootCmd.AddCommand(cmdPrint, cmdEcho)
@@ -79,7 +81,7 @@ type checkEventRespBody struct {
 	Status string
 }
 
-func waitEventAndFinish(id string) string {
+func waitEventAndFinish(serverUrl string, id string) string {
 
 	for {
 		status := checkEventStatus(id)
@@ -117,7 +119,7 @@ type createEventRespBody struct {
     Id string
 }
 
-func createEvent() string {
+func createEvent(serverUrl string) string {
 	fiveMinutesLater := (time.Now().Unix()) + 60 * 5
 
 	body := `
@@ -142,8 +144,8 @@ func createEvent() string {
 	return data.Id
 }
 
-func requestToSlack(id string, message string) {
-	url := "https://hooks.slack.com/services/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"
+func requestToSlack(slackUrl, id string, message string) {
+	// url := "https://hooks.slack.com/services/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"
 
 	// jsonStr := []byte(`{"token":"aaaa"}`)
 	// req, err := http.Post(url, bytes.NewBuffer(jsonStr))
@@ -153,7 +155,7 @@ func requestToSlack(id string, message string) {
 	// }
 
 	// http.Get(url)
-	res, err := http.Post(url, "application/json", bytes.NewBuffer([]byte(`
+	res, err := http.Post(slackUrl, "application/json", bytes.NewBuffer([]byte(`
 	{
 		"text": "` + message + `",
 		"blocks": [
