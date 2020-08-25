@@ -75,7 +75,7 @@ func Execute() {
 }
 
 // var debugUrl = "https://412c6cfaf8b6.ngrok.io"
-var serverUrl = "https://8eiq8vncn4.execute-api.ap-northeast-1.amazonaws.com/dev/events"
+// var serverUrl = "https://8eiq8vncn4.execute-api.ap-northeast-1.amazonaws.com/dev/events"
 
 type checkEventRespBody struct {
 	Status string
@@ -84,7 +84,7 @@ type checkEventRespBody struct {
 func waitEventAndFinish(serverUrl string, id string) string {
 
 	for {
-		status := checkEventStatus(id)
+		status := checkEventStatus(serverUrl, id)
 		fmt.Println(status)
 
 		if status == "timeout" || status == "rejected" {
@@ -96,7 +96,7 @@ func waitEventAndFinish(serverUrl string, id string) string {
 	}
 }
 
-func checkEventStatus(id string) string {
+func checkEventStatus(serverUrl string, id string) string {
 
 	res, err := http.Get(serverUrl + "/" + id)
 	// res, err := http.Get(debugUrl + "/" + id)
