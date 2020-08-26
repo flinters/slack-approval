@@ -8,9 +8,6 @@ on:
 jobs:
   goreleaser:
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: clientttt
     steps:
       -
         name: Checkout
@@ -28,6 +25,7 @@ jobs:
         with:
           version: latest
           args: release --rm-dist
+          workdir: client
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
