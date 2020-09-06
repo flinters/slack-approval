@@ -132,58 +132,69 @@ func createEvent(serverUrl string) string {
 }
 
 func requestToSlack(slackUrl, id string, message string) {
-	res, err := http.Post(slackUrl, "application/json", bytes.NewBuffer([]byte(`
-	{
-		"text": "`+message+`",
-		"blocks": [
-			{
-				"type": "header",
-				"text": {
-					"type": "plain_text",
-					"text": "`+message+`",
-					"emoji": true
-				}
-			},
-			{
-				"type": "divider"
-			},
-			{
-				"type": "section",
-				"text": {
-					"type": "mrkdwn",
-					"text": "承認しますか"
-				}
-			},
-			{
-				"type": "actions",
-				"block_id": "`+id+`",
-				"elements": [
-					{
-						"type": "button",
-						"style": "primary",
-						"text": {
-							"type": "plain_text",
-							"text": "承認する",
-							"emoji": true
-						},
-						"value": "1"
-					},
-					{
-						"type": "button",
-						"text": {
-							"type": "plain_text",
-							"text": "承認しない",
-							"emoji": true
-						},
-						"value": "0"
-					}
-				]
-			}
-		]
-	}
-	`)))
+	res, err := http.Post(slackUrl, "application/json", bytes.NewBuffer(buildMessageJson(id, message)))
 	if err != nil {
 		panic(err)
 	}
 	defer res.Body.Close()
+}
+
+func buildMessageJson(id, message string) []byte {
+
+	type obj = map[string]interface{}
+
+	data := obj{
+		"text": message,
+		"blocks": []obj{
+			obj{
+				"type": "header",
+				"text": obj{
+					"type":  "plain_text",
+					"text":  message,
+					"emoji": true,
+				},
+			},
+			obj{
+				"type": "divider",
+			},
+			obj{
+				"type": "section",
+				"text": obj{
+					"type": "mrkdwn",
+					"text": "承認しますか",
+				},
+			},
+			obj{
+				"type":     "actions",
+				"block_id": id,
+				"elements": []obj{
+					obj{
+						"type":  "button",
+						"style": "primary",
+						"text": obj{
+							"type":  "plain_text",
+							"text":  "承認する",
+							"emoji": true,
+						},
+						"value": "1",
+					},
+					obj{
+						"type": "button",
+						"text": obj{
+							"type":  "plain_text",
+							"text":  "承認しない",
+							"emoji": true,
+						},
+						"value": "0",
+					},
+				},
+			},
+		},
+	}
+	b, err := json.Marshal(data)
+	if err != nil {
+		// shouldn't cause error
+		panic(err)
+	}
+	return b
 }
