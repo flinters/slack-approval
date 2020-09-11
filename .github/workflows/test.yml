@@ -22,4 +22,4 @@ jobs:
           go-version: 1.15
       -
         name: Test
-        run: "cd client && go test -v ./cmd"
+        run: go test -v ./cmd
